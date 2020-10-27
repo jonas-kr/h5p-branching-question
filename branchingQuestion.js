@@ -90,7 +90,7 @@ H5P.BranchingQuestion = (function () {
         alternative.feedback = altParams.feedback;
 
         alternative.addEventListener('keyup', function (event) {
-          if (event.which == 13 || event.which == 32) {
+          if (event.which === 13 || event.which === 32) {
             this.click();
           }
         });
@@ -140,6 +140,13 @@ H5P.BranchingQuestion = (function () {
         };
         questionWrapper.appendChild(alternative);
       });
+
+      // Add alternative to go back
+      const currentId = self.parent.getUserPath().slice(-1)[0] || -1;
+      if (currentId >= 0 && self.parent.canEnableBackButton(currentId) === true && self.parent.getUserPath().length > 1) {
+        const alternativeBack = self.createAlternativeBackContainer(self.parent.params.l10n.backButtonText);
+        questionWrapper.appendChild(alternativeBack);
+      }
 
       wrapper.appendChild(questionWrapper);
       return wrapper;
@@ -240,6 +247,26 @@ H5P.BranchingQuestion = (function () {
     };
 
     /**
+     * Create alternative container for going back.
+     * @param {string} text Text for the container.
+     * @param {HTMLElement} Alternative container.
+     */
+    self.createAlternativeBackContainer = function (text) {
+      const self = this;
+
+      const alternativeBack = createAlternativeContainer(text);
+      alternativeBack.classList.add('h5p-branching-question-alternative-back');
+
+      alternativeBack.addEventListener('click', function () {
+        self.trigger('navigated', {
+          reverse: true
+        });
+      });
+
+      return alternativeBack;
+    };
+
+    /**
      * Get xAPI data.
      * Contract used by report rendering engine.
      *
@@ -264,7 +291,7 @@ H5P.BranchingQuestion = (function () {
       const converter = document.createElement('div');
 
       var definition = xAPIEvent.getVerifiedStatementValue(['object', 'definition']);
-      converter.innerHTML = parameters.branchingQuestion.question
+      converter.innerHTML = parameters.branchingQuestion.question;
       definition.description = {
         'en-US': converter.innerText
       };
@@ -278,7 +305,7 @@ H5P.BranchingQuestion = (function () {
 
       const alternatives = parameters.branchingQuestion.alternatives;
       for (let i = 0; i < alternatives.length; i++) {
-        converter.innerHTML = alternatives[i].text
+        converter.innerHTML = alternatives[i].text;
         definition.choices[i] = {
           'id': i + '',
           'description': {
@@ -292,6 +319,9 @@ H5P.BranchingQuestion = (function () {
      * TODO
      */
     self.attach = function ($container) {
+      // Disable back button of underlying library screen
+      self.parent.disableBackButton();
+
       var questionContainer = document.createElement('div');
       questionContainer.classList.add('h5p-branching-question-container');
 
